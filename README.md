@@ -1,71 +1,61 @@
 # Sonus Flow
 
-*A simple, powerful hearing trainer designed to help you focus.*
-
-![Sonus Flow in Action](path/to/your/sonusflow.gif)  
-*(You'll need to replace this path with the GIF you recorded and placed in your repository)*
+*An Auditory Training Tool for Auditory Processing Disorder (APD)*
 
 ---
 
-## About The Project
+## The Challenge: Understanding APD
 
-In a world full of noise, our brains have a natural ability to filter out distractions and focus on what's important, like a single conversation in a bustling cafe. This project aims to improve focus on important sounds in complex auditory environments by allowing users to manipulate and isolate audio layers from real-world ambiences.
+Auditory Processing Disorder (APD) is a neurological condition that affects how the brain processes sound. Individuals with APD can hear perfectly well, but their brains struggle to interpret and make sense of what they hear, especially in complex auditory environments. This can make everyday situations, like holding a conversation in a bustling cafe or focusing on a lecture, incredibly challenging.
 
-**Sonus Flow** is a non-commercial, therapeutic tool designed to help users retrain this essential hearing skill. It was born from a desire to create an accessible tool, especially for those with unique hearing challenges, to provide both a training exercise and a space for auditory relaxation.
+This difficulty in filtering out background noise to focus on a primary sound source is often related to the "cocktail party effect," a cognitive skill that many of us take for granted. For those with APD, the brain doesn't easily separate the "signal" from the "noise."
 
 ---
 
-# A Focus on Hearing Health
+## The Solution: Sonus Flow
 
-Sonus Flow is designed with user safety as a top priority. Hearing health is delicate, and this tool is built to be protective, not harmful. To achieve this, the application follows two key principles:
+**Sonus Flow** is a non-commercial, therapeutic tool designed to help individuals with APD practice and improve their auditory discrimination skills in a controlled, safe environment.
 
-### 1. Subtractive EQ by Design
-Unlike traditional equalizers that can boost frequencies to potentially dangerous levels, the EQs in Sonus Flow are **subtractive-only**. This means the controls can only be used to "carve away" or reduce the volume of specific frequency bands. This is a common technique in professional audio mixing that promotes clarity and prevents excessive loudness, ensuring a safe and comfortable listening experience.
+By simulating real-world scenarios, the application provides targeted exercises that aim to leverage the principles of neuroplasticity—the brain's ability to reorganize itself by forming new neural connections. The goal is to help the user's brain become more efficient at identifying and focusing on a target voice amidst a backdrop of ambient sound, with the hope that this practice translates to improved focus in daily life.
+
+---
+
+## Core Features
+
+* **Simulated Real-World Environments:** Choose from a library of background soundscapes to replicate challenging listening situations.
+* **Targeted Voice Training:** Isolate and focus on a specific vocal track, training your brain to "lock on" to a single speaker.
+* **Independent Playback Control:** Manage the voice and background channels separately to customize the difficulty of your training session.
+* **Focus-Targeting EQ:** Utilize a professional-grade 3-band subtractive equalizer to gently "carve out" space for the voice, making it more intelligible without artificially boosting volume.
+* **Extensible by Design:** The application automatically discovers and loads new voice and background files placed in the `sounds` directory, allowing for an ever-growing library of training scenarios.
+
+---
+
+## Safety by Design
+
+Hearing health is paramount. Sonus Flow is built from the ground up to be a protective tool, not a harmful one.
+
+### 1. Subtractive-Only EQ
+Unlike traditional equalizers that can boost frequencies to potentially dangerous levels, the EQs in Sonus Flow are **subtractive-only**. The controls can only reduce the volume of specific frequency bands. This is a common technique in professional audio that promotes clarity and prevents excessive loudness, ensuring a safe and comfortable listening experience.
 
 ### 2. Safe Mode (Planned Feature)
-A planned "Safe Mode" will provide an optional master volume limiter. When enabled, it will ensure the total output of the application never exceeds a comfortable, standardized listening level (e.g., -14 LUFS), giving users peace of mind during longer training sessions.
+A planned "Safe Mode" will provide an optional master volume limiter. When enabled, it will ensure the total output of the application never exceeds a comfortable, standardized listening level (e.g., -14 LUFS), providing peace of mind during longer training sessions.
 
 ---
 
-## Features
+## Technical Implementation
 
-* **Dynamic Soundscapes:** Choose from a variety of background scenarios (e.g., "Quiet Cafe," "Busy Sidewalk").
-* **Focus Voice Training:** Select a distinct vocal track (e.g., "Poem Recital") to focus on amidst the background noise.
-* **Independent Audio Control:** Separate playback controls for the background and the focus voice.
-* **Granular Sound Control:**
-    * Adjust the volume of individual layers within each background scene.
-    * Control the Low, Mid, and High frequencies of the focus voice with a 3-band EQ.
-* **Extensible:** The application automatically discovers and loads new voice files from its resource folder.
-
----
-
-## Built With
-
-* C++17
-* Qt 6 (for GUI development)
-* CMake (for build system management)
-* MiniAudio (for audio playback)
-
----
-
-### How the Audio Engine Works
-
-The audio processing in Sonus Flow is powered by the **MiniAudio** library. The 3-band equalizer for the focus voice is built using a chain of **biquad filters**. Each filter's shape and response are defined by several key parameters:
-
-* **Filter Type:** The EQ uses *low-shelf*, *peaking*, and *high-shelf* filters to provide broad tonal control over the bass, mids, and treble, respectively.
-* **Frequency:** The center or corner frequency for each band is set to a musically relevant point to effectively shape the vocal range.
-* **Q-Factor:** A moderate Q-factor is used to create gentle, natural-sounding curves rather than sharp, artificial-sounding cuts.
-* **Gain:** The gain for each band is controlled by the UI sliders and is limited to a subtractive (cut-only) range to ensure user safety.
+* **Languages:** C++17
+* **Framework:** Qt 6 (for the cross-platform GUI)
+* **Build System:** CMake
+* **Audio Engine:** The core audio playback and processing is powered by the lightweight **MiniAudio** library. The 3-band equalizer is a chain of biquad filters (*low-shelf, peaking, high-shelf*) designed to provide broad, musical control over the vocal frequency range.
 
 ---
 
 ## Getting Started (Building from Source)
 
-To get a local copy up and running, follow these steps.
+This guide assumes a Linux environment. You will need a C++ compiler, CMake, and the Qt 6 development libraries.
 
 ### Prerequisites
-
-This guide assumes a Linux environment. You will need a C++ compiler, CMake, and the Qt 6 development libraries.
 
 * **On Arch Linux:**
     ```sh
@@ -80,7 +70,7 @@ This guide assumes a Linux environment. You will need a C++ compiler, CMake, and
 
 1.  **Clone the repository:**
     ```sh
-    git clone [https://github.com/your_username/SonusFlow.git](https://github.com/your_username/SonusFlow.git)
+    git clone [https://github.com/KYNNAC/SonusFlow.git](https://github.com/KYNNAC/SonusFlow.git)
     cd SonusFlow
     ```
 2.  **Create a build directory:**
@@ -96,6 +86,7 @@ This guide assumes a Linux environment. You will need a C++ compiler, CMake, and
     make
     ```
 5.  **Run the application:**
+    The application requires its `sounds` asset folder to be in the same directory as the executable. The CMake configuration handles this automatically.
     ```sh
     ./SonusFlow
     ```
