@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(SonusFlow VERSION 0.1 LANGUAGES CXX C)
 
+# --- 1. Standard Qt & CMake Setup ---
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -9,59 +10,84 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools)
 
-# --- Create a Library for MiniAudio ---
-# This is the ONLY place miniaudio.c should be compiled.
-add_library(miniaudio_lib third_party/miniaudio.c)
-
-# Tell the library where its own headers are. PUBLIC propagates this to linkers.
-target_include_directories(miniaudio_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
-
-# Add the special decoder instructions directly to the library. PUBLIC propagates these.
-target_compile_definitions(miniaudio_lib PUBLIC
-    MA_ENABLE_MP3
-    MA_ENABLE_FLAC
-)
-# --- End of MiniAudio Library Definition ---
-
-
-set(TS_FILES SonusFlow_en_CA.ts)
-
-# The list of sources for the main application.
+# --- 2. Define Source Files ---
+# Group all your project's source files here.
 set(PROJECT_SOURCES
     main.cpp
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
-    ${TS_FILES}
-    resources.qrc
+    # resources.qrc
+    SonusFlow_en_CA.ts
 )
 
-# Create the executable from sources
-if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    qt_add_executable(SonusFlow
-        MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
+# --- 3. Create the Targets ---
+# First, create the main application executable from your sources.
+qt_add_executable(SonusFlow MANUAL_FINALIZATION
+    ${PROJECT_SOURCES}
+)
+
+# Second, create a static library for the miniaudio implementation.
+# This is the single, correct place for this command.
+add_library(miniaudio_lib STATIC
+    miniaudio_impl.cpp
+)
+
+# --- 4. Configure Include Paths ---
+# Tell the SonusFlow executable where to find header files.
+target_include_directories(SonusFlow PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party # For miniaudio.h
+)
+
+# Tell the miniaudio_lib where to find its own header file.
+target_include_directories(miniaudio_lib PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party # For miniaudio.h
+)
+
+# --- 5. Link Libraries ---
+# Link the SonusFlow executable against Qt and our other libraries.
+target_link_libraries(SonusFlow PRIVATE
+    Qt6::Widgets
+    miniaudio_lib
+    asound      # For ALSA on Linux
+    pthread     # For threading
+    m           # For the math library
+)
+
+# --- 6. Custom Build Step: Copy Assets to Build Directory ---
+# This ensures our sounds are always available next to the executable.
+
+# Define the source directory for our assets
+set(ASSET_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/sounds)
+
+# Define the destination directory (where the executable will be)
+set(ASSET_DEST_DIR ${CMAKE_BINARY_DIR}/sounds)
+
+# Find all files within the source directory and its subdirectories
+file(GLOB_RECURSE ASSET_FILES "${ASSET_SOURCE_DIR}/*")
+
+# For each file, create a command to copy it to the destination
+foreach(ASSET_FILE ${ASSET_FILES})
+    # Determine the relative path to preserve the subfolder structure
+    file(RELATIVE_PATH RELATIVE_ASSET_FILE ${ASSET_SOURCE_DIR} ${ASSET_FILE})
+    set(DEST_FILE "${ASSET_DEST_DIR}/${RELATIVE_ASSET_FILE}")
+
+    # Add the command to copy the file if it's new or has changed
+    add_custom_command(
+        TARGET SonusFlow POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${ASSET_FILE}"
+        "${DEST_FILE}"
+        COMMENT "Copying asset: ${RELATIVE_ASSET_FILE}"
     )
-    qt_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
-else()
-    add_executable(SonusFlow
-        ${PROJECT_SOURCES}
-    )
-    qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
-endif()
+endforeach()
 
-
-# Link SonusFlow against the Qt Widgets library, miniaudio_lib and Threads
-target_link_libraries(SonusFlow PRIVATE Qt${QT_VERSION_MAJOR}::Widgets miniaudio_lib Threads::Threads)
-
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-    set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.SonusFlow)
-endif()
+# --- 7. Packaging & Installation ---
 set_target_properties(SonusFlow PROPERTIES
-    ${BUNDLE_ID_OPTION}
+    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.SonusFlow
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
@@ -75,6 +101,5 @@ install(TARGETS SonusFlow
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-if(QT_VERSION_MAJOR EQUAL 6)
-    qt_finalize_executable(SonusFlow)
-endif()
+# Finalize the Qt executable (must be last for MANUAL_FINALIZATION).
+qt_finalize_executable(SonusFlow)

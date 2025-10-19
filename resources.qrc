@@ -1,13 +1,4 @@
 <RCC>
     <qresource prefix="/">
-        <file>sounds/voices/Nasa Apollo 11 Onboard Recordings - Highlight 5.mp3</file>
-        <file>sounds/voices/Nasa Apollo 11 Onboard Recordings - Highlight 4.mp3</file>
-        <file>sounds/voices/Nasa Apollo 11 Onboard Recordings - Highlight 3.mp3</file>
-        <file>sounds/voices/Nasa Apollo 11 Onboard Recordings - Highlight 2.mp3</file>
-        <file>sounds/voices/Santa Claus Proves There Is A Santa Claus by Ernest Hare 1925.mp3</file>
-        <file>sounds/backgrounds/Medieval Village 3.wav</file>
-        <file>sounds/backgrounds/Medieval Village 1.wav</file>
-        <file>sounds/backgrounds/Medieval Village 2.wav</file>
-        <file>sounds/voices/apollo11_1.mp3</file>
     </qresource>
 </RCC>
