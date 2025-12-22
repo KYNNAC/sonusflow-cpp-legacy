@@ -10,48 +10,65 @@
 #include <QCoreApplication>
 #include <vector>
 
-// The data callback is now simple: it just reads, processes, and outputs audio.
+// Data callback reads, processes, and outputs audio.
 void MainWindow::data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
 {
     MainWindow* mainWindow = static_cast<MainWindow*>(pDevice->pUserData);
     if (mainWindow == nullptr) return;
 
-    // Use a temporary buffer that is guaranteed to be large enough
-    std::vector<float> mixBuffer(frameCount * pDevice->playback.channels, 0.0f);
+    std::vector<float> backgroundBuffer(frameCount * pDevice->playback.channels, 0.0f);
+    std::vector<float> voiceBuffer(frameCount * pDevice->playback.channels, 0.0f);
+    // --- PING-PONG BUFFER ---
+    std::vector<float> processedBuffer(frameCount * pDevice->playback.channels, 0.0f);
+    std::vector<float> finalMixBuffer(frameCount * pDevice->playback.channels, 0.0f);
 
-    { // Scoped lock to protect shared data
+    { // Scoped lock
         QMutexLocker locker(&mainWindow->audioStateMutex);
 
-        // 1. Process Background Audio
+        // --- STEP 1: Process Background ---
         if (mainWindow->isBackgroundLoaded && mainWindow->isBackgroundPlaying) {
             ma_uint64 framesRead = 0;
-            ma_decoder_read_pcm_frames(&mainWindow->backgroundDecoder, mixBuffer.data(), frameCount, &framesRead);
+            ma_decoder_read_pcm_frames(&mainWindow->backgroundDecoder, backgroundBuffer.data(), frameCount, &framesRead);
             if (framesRead < frameCount) {
-                // We've reached the end of the file, but don't stop it, let it loop in the play function
+                ma_decoder_seek_to_pcm_frame(&mainWindow->backgroundDecoder, 0);
             }
         }
 
-        // 2. Process Voice Audio and Mix it in
+        // --- STEP 2: Process Voice with the Ping-Pong Algorithm ---
         if (mainWindow->isVoiceLoaded && mainWindow->isVoicePlaying) {
-            std::vector<float> voiceBuffer(frameCount * pDevice->playback.channels, 0.0f);
             ma_uint64 framesRead = 0;
             ma_decoder_read_pcm_frames(&mainWindow->voiceDecoder, voiceBuffer.data(), frameCount, &framesRead);
 
-            // Mix voice into the main buffer, applying volume
-            for (ma_uint32 i = 0; i < mixBuffer.size(); ++i) {
-                mixBuffer[i] += voiceBuffer[i] * mainWindow->voiceVolume;
+            if (framesRead > 0) {
+                // 1. Low Shelf: Reads from original `voiceBuffer`, writes to `processedBuffer`
+                ma_loshelf2_process_pcm_frames(&mainWindow->eqFilterLow, processedBuffer.data(), voiceBuffer.data(), framesRead);
+
+                // 2. Mid Peak: Reads from `processedBuffer`, writes back to `voiceBuffer`
+                ma_peak2_process_pcm_frames(&mainWindow->eqFilterMid, voiceBuffer.data(), processedBuffer.data(), framesRead);
+
+                // 3. High Shelf: Reads from `voiceBuffer`, writes back to `processedBuffer`
+                ma_hishelf2_process_pcm_frames(&mainWindow->eqFilterHigh, processedBuffer.data(), voiceBuffer.data(), framesRead);          
             }
 
             if (framesRead < frameCount) {
-                mainWindow->isVoicePlaying = false; // Stop at the end
+                QMetaObject::invokeMethod(mainWindow, "stopVoicePlayback", Qt::QueuedConnection);
             }
         }
-    } // Mutex is released automatically here
+    } // Mutex released
 
-    // 3. CRITICAL: Copy the final mixed audio to the output for the sound card
-    memcpy(pOutput, mixBuffer.data(), mixBuffer.size() * sizeof(float));
+    // --- STEP 3: Mix the final buffers ---
+    for (ma_uint32 i = 0; i < frameCount * pDevice->playback.channels; ++i) {
+
+        // Use the final processedBuffer for the voice
+        float voiceSample = processedBuffer[i] * mainWindow->voiceVolume;
+        float backgroundSample = backgroundBuffer[i];
+
+        finalMixBuffer[i] = voiceSample + backgroundSample;
+    }
+
+    // --- STEP 4: Output the final mix ---
+    memcpy(pOutput, finalMixBuffer.data(), finalMixBuffer.size() * sizeof(float));
 }
-
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
@@ -67,7 +84,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Connect all UI signals to their slots
     connect(ui->ambienceComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::onAmbienceChanged);
-    connect(ui->voiceComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::onVoiceSelectionChanged);
+    connect(ui->voiceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onVoiceSelectionChanged);
     connect(ui->playVoiceButton, &QPushButton::clicked, this, &MainWindow::onPlayVoiceClicked);
     connect(ui->playBackgroundButton, &QPushButton::clicked, this, &MainWindow::onPlayBackgroundClicked);
     connect(ui->slider_voice_master, &QSlider::valueChanged, this, &MainWindow::onVoiceMasterVolumeChanged);
@@ -99,28 +116,20 @@ void MainWindow::initializeAudio()
 
     ma_result result_init = ma_device_init(NULL, &deviceConfig, &device);
     if (result_init != MA_SUCCESS) {
-        // NEW: Added debug message for initialization failure
+        // Debug message for initialization failure
         qDebug() << "ERROR: Failed to initialize audio device. Code:" << result_init;
         return;
     }
 
-    ma_loshelf2_config lowConfig = ma_loshelf2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 250, 1.0, 0);
-    ma_peak2_config midConfig = ma_peak2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 1200, 0.707, 0);
-    ma_hishelf2_config highConfig = ma_hishelf2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 5000, 1.0, 0);
-
-    ma_loshelf2_init(&lowConfig, NULL, &eqFilterLow);
-    ma_peak2_init(&midConfig, NULL, &eqFilterMid);
-    ma_hishelf2_init(&highConfig, NULL, &eqFilterHigh);
-
     ma_result result_start = ma_device_start(&device);
     if (result_start != MA_SUCCESS) {
-        // NEW: Added debug message for start failure and cleanup
+        // Debug message for start failure and cleanup
         qDebug() << "ERROR: Failed to start audio device. Code:" << result_start;
         ma_device_uninit(&device); // Clean up what was initialized
         return;
     }
 
-    // NEW: Added a success message so we know it worked
+    // Success message
     qDebug() << "Audio device started successfully!";
     audioInitialized = true;
     voiceVolume = 1.0f;
@@ -135,7 +144,7 @@ void MainWindow::shutdownAudio()
     }
 }
 
-// These two functions now simply unload the decoders and reset the UI
+// Unload the decoders and reset the UI
 void MainWindow::onAmbienceChanged(int index)
 {
     qDebug() << "Ambience selection changed, preparing for new sound.";
@@ -143,7 +152,7 @@ void MainWindow::onAmbienceChanged(int index)
 
     if (isBackgroundLoaded) {
         isBackgroundPlaying = false;
-        ma_decoder_uninit(&backgroundDecoder); // Take the old engine out
+        ma_decoder_uninit(&backgroundDecoder);
         isBackgroundLoaded = false;
         ui->playBackgroundButton->setText("Play Background");
         ui->backgroundStatusLabel->setText("Status: Stopped");
@@ -157,14 +166,18 @@ void MainWindow::onVoiceSelectionChanged(int index)
 
     if (isVoiceLoaded) {
         isVoicePlaying = false;
-        ma_decoder_uninit(&voiceDecoder); // Take the old engine out
+        ma_decoder_uninit(&voiceDecoder);
         isVoiceLoaded = false;
         ui->playVoiceButton->setText("Play Voice");
         ui->voiceStatusLabel->setText("Status: Stopped");
+
+        ui->slider_voice_low->setValue(100);
+        ui->slider_voice_mid->setValue(100);
+        ui->slider_voice_high->setValue(100);
     }
 }
 
-// The onPlay...Clicked functions are now the single source of truth for playback.
+// Playback
 void MainWindow::onPlayBackgroundClicked()
 {
     qDebug() << "onPlayBackgroundClicked() was triggered!";
@@ -176,27 +189,29 @@ void MainWindow::onPlayBackgroundClicked()
         if (selected.isEmpty()) return;
         QString path = backgroundPathMap.value(selected);
 
-        qDebug() << "Attempting to load background from filesystem path:" << path; // Corrected message
+        qDebug() << "Attempting to load background from filesystem path:" << path;
 
         QFile backgroundFile(path);
         if (!backgroundFile.open(QIODevice::ReadOnly)) {
-            // NEW: This gives us the REAL error
+
+            // Error message
             qDebug() << "FILE ERROR: Could not open background file. Reason:" << backgroundFile.errorString();
             ui->backgroundStatusLabel->setText("Status: File Error");
             return;
         }
 
         backgroundData = backgroundFile.readAll();
-        backgroundFile.close(); // Good practice to close the file
+        backgroundFile.close();
 
         if (backgroundData.isEmpty()) {
+
             qDebug() << "FILE ERROR: File is empty or could not be read.";
             return;
         }
 
         qDebug() << "Background file loaded successfully," << backgroundData.size() << "bytes.";
 
-        ma_decoder_config cfg = ma_decoder_config_init_default();
+        ma_decoder_config cfg = ma_decoder_config_init(device.playback.format, device.playback.channels, device.sampleRate);
         if (ma_decoder_init_memory(backgroundData.constData(), backgroundData.size(), &cfg, &backgroundDecoder) != MA_SUCCESS) {
             ui->backgroundStatusLabel->setText("Status: Decode Error");
             return;
@@ -222,23 +237,24 @@ void MainWindow::onPlayVoiceClicked()
     if (!audioInitialized) return;
     QMutexLocker locker(&audioStateMutex);
 
+    // --- LOGIC CHANGE 1: Load file if needed ---
+
     if (!isVoiceLoaded) {
         QString selected = ui->voiceComboBox->currentText();
         if (selected.isEmpty()) return;
         QString path = voicePathMap.value(selected);
 
-        qDebug() << "Attempting to load voice from filesystem path:" << path; // Corrected message
+        qDebug() << "Attempting to load voice from filesystem path:" << path;
 
         QFile voiceFile(path);
         if (!voiceFile.open(QIODevice::ReadOnly)) {
-            // NEW: This gives us the REAL error
             qDebug() << "FILE ERROR: Could not open voice file. Reason:" << voiceFile.errorString();
             ui->voiceStatusLabel->setText("Status: File Error");
             return;
         }
 
         voiceData = voiceFile.readAll();
-        voiceFile.close(); // Good practice to close the file
+        voiceFile.close();
 
         if (voiceData.isEmpty()) {
             qDebug() << "FILE ERROR: File is empty or could not be read.";
@@ -247,24 +263,67 @@ void MainWindow::onPlayVoiceClicked()
 
         qDebug() << "Voice file loaded successfully," << voiceData.size() << "bytes.";
 
-        ma_decoder_config cfg = ma_decoder_config_init_default();
+        ma_decoder_config cfg = ma_decoder_config_init(device.playback.format, device.playback.channels, device.sampleRate);
         if (ma_decoder_init_memory(voiceData.constData(), voiceData.size(), &cfg, &voiceDecoder) != MA_SUCCESS) {
             ui->voiceStatusLabel->setText("Status: Decode Error");
             return;
         }
+
+        ma_result result;
+
+        ma_loshelf2_config lowConfig = ma_loshelf2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 250, 0, 1.0);
+        result = ma_loshelf2_init(&lowConfig, NULL, &eqFilterLow);
+        if (result != MA_SUCCESS) {
+            qDebug() << "CRITICAL: Failed to initialize LOW SHELF filter. Error:" << result;
+            return;
+        }
+
+        ma_peak2_config midConfig = ma_peak2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 1200, 0.707, 0);
+        result = ma_peak2_init(&midConfig, NULL, &eqFilterMid);
+        if (result != MA_SUCCESS) {
+            qDebug() << "CRITICAL: Failed to initialize MID PEAK filter. Error:" << result;
+            return;
+        }
+
+        ma_hishelf2_config highConfig = ma_hishelf2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 5000, 0, 1.0);
+        result = ma_hishelf2_init(&highConfig, NULL, &eqFilterHigh);
+        if (result != MA_SUCCESS) {
+            qDebug() << "CRITICAL: Failed to initialize HIGH SHELF filter. Error:" << result;
+            return;
+        }
+
+        qDebug() << "All EQ filters initialized successfully.";
+
+        ui->slider_voice_low->setValue(100);
+        ui->slider_voice_mid->setValue(100);
+        ui->slider_voice_high->setValue(100);
+
         isVoiceLoaded = true;
         currentVoiceName = selected;
     }
 
+    // Toggle playing state
     isVoicePlaying = !isVoicePlaying;
+
     if (isVoicePlaying) {
+        // --- LOGIC CHANGE 2: Reset for playback ---
         ma_decoder_seek_to_pcm_frame(&voiceDecoder, 0);
+
+        // Update UI
         ui->voiceStatusLabel->setText("Status: Playing");
         ui->playVoiceButton->setText("Stop Voice");
     } else {
         ui->voiceStatusLabel->setText("Status: Stopped");
         ui->playVoiceButton->setText("Play Voice");
     }
+}
+
+void MainWindow::stopVoicePlayback()
+{
+    QMutexLocker locker(&audioStateMutex);
+    isVoicePlaying = false;
+    ui->voiceStatusLabel->setText("Status: Finished");
+    ui->playVoiceButton->setText("Play Voice");
 }
 
 void MainWindow::onVoiceMasterVolumeChanged(int value)
@@ -276,31 +335,37 @@ void MainWindow::onVoiceMasterVolumeChanged(int value)
 
 void MainWindow::onVoiceEqLowChanged(int value)
 {
+    if (!isVoiceLoaded) return;
     if (!audioInitialized) return;
     double gainDB = (value / 100.0) * 24.0 - 24.0;
 
     QMutexLocker locker(&audioStateMutex);
-    ma_loshelf2_config config = ma_loshelf2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 250, 1.0, gainDB);
+    // Correct order: frequency, gainDB, slope
+    ma_loshelf2_config config = ma_loshelf2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 250, gainDB, 1.0);
     ma_loshelf2_reinit(&config, &eqFilterLow);
 }
 
 void MainWindow::onVoiceEqMidChanged(int value)
 {
+    if (!isVoiceLoaded) return;
     if (!audioInitialized) return;
     double gainDB = (value / 100.0) * 24.0 - 24.0;
 
     QMutexLocker locker(&audioStateMutex);
+    // Correct order: frequency, Q, gainDB
     ma_peak2_config config = ma_peak2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 1200, 0.707, gainDB);
     ma_peak2_reinit(&config, &eqFilterMid);
 }
 
 void MainWindow::onVoiceEqHighChanged(int value)
 {
+    if (!isVoiceLoaded) return;
     if (!audioInitialized) return;
     double gainDB = (value / 100.0) * 24.0 - 24.0;
 
     QMutexLocker locker(&audioStateMutex);
-    ma_hishelf2_config config = ma_hishelf2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 5000, 1.0, gainDB);
+    // Correct order: frequency, gainDB, slope
+    ma_hishelf2_config config = ma_hishelf2_config_init(device.playback.format, device.playback.channels, device.sampleRate, 5000, gainDB, 1.0);
     ma_hishelf2_reinit(&config, &eqFilterHigh);
 }
 
@@ -328,7 +393,7 @@ void MainWindow::populateBackgroundComboBox()
     {
         QString prettyName = QFileInfo(filename).baseName();
         prettyName.replace('_', ' ');
-        QString fullPath = backgroundDir.filePath(filename); // This is now a real filesystem path
+        QString fullPath = backgroundDir.filePath(filename);
         backgroundPathMap[prettyName] = fullPath;
     }
 
@@ -360,7 +425,7 @@ void MainWindow::populateVoiceComboBox()
     {
         QString prettyName = QFileInfo(filename).baseName();
         prettyName.replace('_', ' ');
-        QString fullPath = voiceDir.filePath(filename); // This is now a real filesystem path
+        QString fullPath = voiceDir.filePath(filename);
         voicePathMap[prettyName] = fullPath;
     }
 

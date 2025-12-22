@@ -13,7 +13,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets LinguistTools)
 
 # --- 2. Define Source Files ---
-# Group all your project's source files here.
+# Group project's source files.
 set(PROJECT_SOURCES
     main.cpp
     mainwindow.cpp
@@ -24,13 +24,12 @@ set(PROJECT_SOURCES
 )
 
 # --- 3. Create the Targets ---
-# First, create the main application executable from your sources.
+# First, create the main application executable from sources.
 qt_add_executable(SonusFlow MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
 )
 
 # Second, create a static library for the miniaudio implementation.
-# This is the single, correct place for this command.
 add_library(miniaudio_lib STATIC
     miniaudio_impl.cpp
 )
@@ -48,7 +47,7 @@ target_include_directories(miniaudio_lib PRIVATE
 )
 
 # --- 5. Link Libraries ---
-# Link the SonusFlow executable against Qt and our other libraries.
+# Link the SonusFlow executable against Qt and other libraries.
 target_link_libraries(SonusFlow PRIVATE
     Qt6::Widgets
     miniaudio_lib
@@ -58,15 +57,15 @@ target_link_libraries(SonusFlow PRIVATE
 )
 
 # --- 6. Custom Build Step: Copy Assets to Build Directory ---
-# This ensures our sounds are always available next to the executable.
+# This ensures sounds are always available next to the executable.
 
-# Define the source directory for our assets
+# Define the source directory for assets
 set(ASSET_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/sounds)
 
 # Define the destination directory (where the executable will be)
 set(ASSET_DEST_DIR ${CMAKE_BINARY_DIR}/sounds)
 
-# Find all files within the source directory and its subdirectories
+# Find all files within the source directory and subdirectories
 file(GLOB_RECURSE ASSET_FILES "${ASSET_SOURCE_DIR}/*")
 
 # For each file, create a command to copy it to the destination
@@ -101,5 +100,5 @@ install(TARGETS SonusFlow
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-# Finalize the Qt executable (must be last for MANUAL_FINALIZATION).
+# Finalize the Qt executable.
 qt_finalize_executable(SonusFlow)

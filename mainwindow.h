@@ -36,6 +36,7 @@ private slots:
     void onVoiceEqLowChanged(int value);
     void onVoiceEqMidChanged(int value);
     void onVoiceEqHighChanged(int value);
+    void stopVoicePlayback();
 
 private:
     Ui::MainWindow *ui;
