@@ -4,11 +4,12 @@
 
 ---
 
-⚠️ MEDICAL DISCLAIMER & PROJECT STATUS
+⚠️ **MEDICAL DISCLAIMER & PROJECT STATUS**
 
 Sonus Flow is currently in a Pre-Alpha state. This software is a prototype. It has not been clinically validated, and it is not yet intended for use as a diagnostic or therapeutic tool for Auditory Processing Disorder (APD).
 
-Use of this software is at your own risk. Always consult with a qualified Audiologist or medical professional before beginning any auditory training regimen or treatment.
+**Use of this software is at your own risk. Always consult with a qualified Audiologist or medical professional before beginning any auditory training regimen or treatment.**
+
 
 ## The Challenge: Understanding APD
 
