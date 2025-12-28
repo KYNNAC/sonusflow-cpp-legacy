@@ -10,6 +10,7 @@ Sonus Flow is currently in a Pre-Alpha state. This software is a prototype. It h
 
 **Use of this software is at your own risk. Always consult with a qualified Audiologist or medical professional before beginning any auditory training regimen or treatment.**
 
+---
 
 ## The Challenge: Understanding APD
 
