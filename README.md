@@ -4,6 +4,12 @@
 
 ---
 
+⚠️ MEDICAL DISCLAIMER & PROJECT STATUS
+
+Sonus Flow is currently in a Pre-Alpha state. This software is a prototype. It has not been clinically validated, and it is not yet intended for use as a diagnostic or therapeutic tool for Auditory Processing Disorder (APD).
+
+Use of this software is at your own risk. Always consult with a qualified Audiologist or medical professional before beginning any auditory training regimen or treatment.
+
 ## The Challenge: Understanding APD
 
 Auditory Processing Disorder (APD) is a neurological condition that affects how the brain processes sound. Individuals with APD can hear perfectly well, but their brains struggle to interpret and make sense of what they hear, especially in complex auditory environments. This can make everyday situations, like holding a conversation in a bustling cafe or focusing on a lecture, incredibly challenging.
@@ -30,6 +36,16 @@ By simulating real-world scenarios, the application provides targeted exercises 
 
 ---
 
+## High-Performance Audio Architecture
+
+Sonus Flow utilizes a **pull-based audio callback system** via the MiniAudio engine. This architecture is a deliberate design choice to ensure professional-grade reliability:
+
+* **Zero-Jitter Playback:** Instead of the application "pushing" audio data to the sound card (which can cause stutters if the CPU is busy), the audio hardware "pulls" data directly from a dedicated high-priority buffer thread.
+* **Thread Safety:** This separates the User Interface (Qt thread) from the Audio Processing (Callback thread). Even if the GUI is being resized or is heavy on resources, the audio "flow" remains uninterrupted, preventing listener fatigue.
+* **Buffer Integrity:** By allowing the hardware to dictate the pace, Sonus Flow significantly reduces the risk of underflows or digital clipping, which is vital for a sensitive therapeutic application.
+
+---
+
 ## Safety by Design
 
 Hearing health is paramount. Sonus Flow is built from the ground up to be a protective tool, not a harmful one.
@@ -48,6 +64,12 @@ A planned "Safe Mode" will provide an optional master volume limiter. When enabl
 * **Framework:** Qt 6 (for the cross-platform GUI)
 * **Build System:** CMake
 * **Audio Engine:** The core audio playback and processing is powered by the lightweight **MiniAudio** library. The 3-band equalizer is a chain of biquad filters (*low-shelf, peaking, high-shelf*) designed to provide broad, musical control over the vocal frequency range.
+
+## Design Decisions
+
+* **Why MiniAudio?** Chosen for its "header-only" nature and C-based efficiency. This ensures low-latency playback which is critical for auditory training where any digital lag could cause listener fatigue.
+* **Why Subtractive EQ?** In APD theraphy, the goal is to train the brain to find the "signal" from the "noise". By using a subtractive-only model, Sonus Flow ensures that the user is practicing clarity rather than simply turning up the volume, which projects the user's hearing over long-term use.
+* **File Discovery Logic:** Instead of hardcoding a playlist, Sonus Flow features an automatic directory crawler. This empowers clinicians or audiologists to drop their own specific "trigger" sounds or "target" voices into the app without recompiling.
 
 ---
 
