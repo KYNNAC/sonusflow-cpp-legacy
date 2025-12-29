@@ -70,8 +70,46 @@ A planned "Safe Mode" will provide an optional master volume limiter. When enabl
 ## Design Decisions
 
 * **Why MiniAudio?** Chosen for its "header-only" nature and C-based efficiency. This ensures low-latency playback which is critical for auditory training where any digital lag could cause listener fatigue.
-* **Why Subtractive EQ?** In APD theraphy, the goal is to train the brain to find the "signal" from the "noise". By using a subtractive-only model, Sonus Flow ensures that the user is practicing clarity rather than simply turning up the volume, which projects the user's hearing over long-term use.
+* **Why Subtractive EQ?** In APD therapy, the goal is to train the brain to find the "signal" from the "noise". By using a subtractive-only model, Sonus Flow ensures that the user is practicing clarity rather than simply turning up the volume, which projects the user's hearing over long-term use.
 * **File Discovery Logic:** Instead of hardcoding a playlist, Sonus Flow features an automatic directory crawler. This empowers clinicians or audiologists to drop their own specific "trigger" sounds or "target" voices into the app without recompiling.
+
+---
+
+## System Architecture
+
+Sonus Flow is designed around the principle of **Data Decoupling**. By separating the UI, the File System, and the DSP Engine into distinct layers, the application ensures that the high-priority audio callback is never blocked by disk I/O or GUI events. 
+
+The following diagram illustrates the signal path and thread boundaries:
+
+```mermaid
+graph TD
+    A[Audio Assets / Disk] -->|In-Memory Decoding| B(PCM Data / RAM)
+    B --> C{Ping-Pong Buffer}
+    
+    subgraph DSP_Engine [Real-Time Audio Thread]
+    C --> D[Biquad Filter 1: Low-Shelf]
+    D --> E[Biquad Filter 2: Mid-Peak]
+    E --> F[Biquad Filter 3: High-Shelf]
+    end
+    
+    subgraph Thread_Safety [State Management]
+    G[Qt UI Thread / User Input] -->|QMutexLocker| H[Safe Parameter Update]
+    H --> DSP_Engine
+    end
+    
+    DSP_Engine --> I[Audio Callback / Hardware Request]
+    I --> J[System Speakers / DAC]
+```
+    
+---
+
+## 🚀 Future Roadmap
+To move Sonus Flow from a prototype to a clinically viable tool, the following technical milestones are planned:
+
+* **Integrated Peak Limiting & LUFS Metering:** Implementing an ITU-R BS.1770-4 compliant loudness metering system and a transparent look-ahead limiter to ensure all training assets adhere to safe output standards.
+* **Neural Voice Isolation (AI Integration):** Integrating lightweight machine learning models (e.g., via ONNX Runtime) to provide real-time voice-from-noise isolation, allowing for advanced "noise-masking" difficulty levels.
+* **Spatial Audio Implementation (HRTF):** Moving from stereo to binaural spatialization using Head-Related Transfer Functions. This will allow users to practice "spatial release from masking," a critical skill in overcoming APD.
+* **Session Telemetry & Progress Tracking:** Development of a local, encrypted SQLite database to track user performance metrics over time, providing data-driven feedback for clinicians.
 
 ---
 
@@ -83,7 +121,7 @@ This guide assumes a Linux environment. You will need a C++ compiler, CMake, and
 
 * **On Arch Linux:**
     ```sh
-    sudo pacman -S base-devel cmake qt6-base
+    sudo pacman -S base-devel cmake qt6-base alsa-lib
     ```
 * **On Ubuntu/Debian:**
     ```sh

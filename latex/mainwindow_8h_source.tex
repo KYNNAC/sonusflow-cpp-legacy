@@ -1,0 +1,84 @@
+\doxysection{mainwindow.\+h}
+\hypertarget{mainwindow_8h_source}{}\label{mainwindow_8h_source}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ MAINWINDOW\_H}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ MAINWINDOW\_H}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}miniaudio.h"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <QMainWindow>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <QByteArray>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <QMap>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <QString>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <QMutex>}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#define\ MA\_ENABLE\_MP3}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#define\ MA\_ENABLE\_FLAC}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#define\ MA\_ENABLE\_FILTERS}}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#include\ "{}miniaudio.h"{}}}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ QT\_BEGIN\_NAMESPACE}
+\DoxyCodeLine{00018\ \textcolor{keyword}{namespace\ }Ui\ \{\ \textcolor{keyword}{class\ }MainWindow;\ \}}
+\DoxyCodeLine{00019\ QT\_END\_NAMESPACE}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{keyword}{class\ }MainWindow\ :\ \textcolor{keyword}{public}\ QMainWindow}
+\DoxyCodeLine{00022\ \{}
+\DoxyCodeLine{00023\ \ \ \ \ Q\_OBJECT}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keyword}{explicit}\ MainWindow(QWidget\ *parent\ =\ \textcolor{keyword}{nullptr});}
+\DoxyCodeLine{00027\ \ \ \ \ \string~MainWindow();}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{keyword}{private}\ slots:}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordtype}{void}\ onAmbienceChanged(\textcolor{keywordtype}{int}\ index);}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{void}\ onPlayVoiceClicked();}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{void}\ onVoiceSelectionChanged(\textcolor{keywordtype}{int}\ index);}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordtype}{void}\ onPlayBackgroundClicked();}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{void}\ onVoiceMasterVolumeChanged(\textcolor{keywordtype}{int}\ value);}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordtype}{void}\ onVoiceEqLowChanged(\textcolor{keywordtype}{int}\ value);}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{void}\ onVoiceEqMidChanged(\textcolor{keywordtype}{int}\ value);}
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keywordtype}{void}\ onVoiceEqHighChanged(\textcolor{keywordtype}{int}\ value);}
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordtype}{void}\ stopVoicePlayback();}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00041\ \ \ \ \ Ui::MainWindow\ *ui;}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{comment}{//\ MiniAudio\ Members}}
+\DoxyCodeLine{00044\ \ \ \ \ ma\_device\ device;}
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keywordtype}{bool}\ audioInitialized;}
+\DoxyCodeLine{00046\ \ \ \ \ ma\_loshelf2\ eqFilterLow;}
+\DoxyCodeLine{00047\ \ \ \ \ ma\_peak2\ \ \ eqFilterMid;}
+\DoxyCodeLine{00048\ \ \ \ \ ma\_hishelf2\ eqFilterHigh;}
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keywordtype}{float}\ voiceVolume;}
+\DoxyCodeLine{00050\ \ \ \ \ QMutex\ audioStateMutex;}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{comment}{//\ Voice\ sound\ variables}}
+\DoxyCodeLine{00053\ \ \ \ \ ma\_decoder\ voiceDecoder;}
+\DoxyCodeLine{00054\ \ \ \ \ \textcolor{keywordtype}{bool}\ isVoiceLoaded;}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordtype}{bool}\ isVoicePlaying;}
+\DoxyCodeLine{00056\ \ \ \ \ QString\ currentVoiceName;}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{comment}{//\ Background\ sound\ variables}}
+\DoxyCodeLine{00059\ \ \ \ \ ma\_decoder\ backgroundDecoder;}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordtype}{bool}\ isBackgroundLoaded;}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordtype}{bool}\ isBackgroundPlaying;}
+\DoxyCodeLine{00062\ \ \ \ \ QString\ currentBackgroundName;}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{comment}{//\ Sonus\ Flow\ Data}}
+\DoxyCodeLine{00065\ \ \ \ \ QMap<QString,\ QString>\ voicePathMap;}
+\DoxyCodeLine{00066\ \ \ \ \ QByteArray\ voiceData;}
+\DoxyCodeLine{00067\ \ \ \ \ QMap<QString,\ QString>\ backgroundPathMap;}
+\DoxyCodeLine{00068\ \ \ \ \ QByteArray\ backgroundData;}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{comment}{//\ Private\ Methods}}
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{keywordtype}{void}\ initializeAudio();}
+\DoxyCodeLine{00072\ \ \ \ \ \textcolor{keywordtype}{void}\ shutdownAudio();}
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordtype}{void}\ populateVoiceComboBox();}
+\DoxyCodeLine{00074\ \ \ \ \ \textcolor{keywordtype}{void}\ populateBackgroundComboBox();}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ data\_callback(ma\_device*\ pDevice,\ \textcolor{keywordtype}{void}*\ pOutput,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{void}*\ pInput,\ ma\_uint32\ frameCount);}
+\DoxyCodeLine{00077\ \};}
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00079\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

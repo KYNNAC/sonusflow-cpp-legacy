@@ -10,7 +10,7 @@
 #include <QCoreApplication>
 #include <vector>
 
-// Data callback reads, processes, and outputs audio.
+// Data callback - Reads, processes and outputs audio.
 void MainWindow::data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
 {
     MainWindow* mainWindow = static_cast<MainWindow*>(pDevice->pUserData);
@@ -18,6 +18,7 @@ void MainWindow::data_callback(ma_device* pDevice, void* pOutput, const void* pI
 
     std::vector<float> backgroundBuffer(frameCount * pDevice->playback.channels, 0.0f);
     std::vector<float> voiceBuffer(frameCount * pDevice->playback.channels, 0.0f);
+
     // --- PING-PONG BUFFER ---
     std::vector<float> processedBuffer(frameCount * pDevice->playback.channels, 0.0f);
     std::vector<float> finalMixBuffer(frameCount * pDevice->playback.channels, 0.0f);
@@ -116,20 +117,17 @@ void MainWindow::initializeAudio()
 
     ma_result result_init = ma_device_init(NULL, &deviceConfig, &device);
     if (result_init != MA_SUCCESS) {
-        // Debug message for initialization failure
         qDebug() << "ERROR: Failed to initialize audio device. Code:" << result_init;
         return;
     }
 
     ma_result result_start = ma_device_start(&device);
     if (result_start != MA_SUCCESS) {
-        // Debug message for start failure and cleanup
         qDebug() << "ERROR: Failed to start audio device. Code:" << result_start;
-        ma_device_uninit(&device); // Clean up what was initialized
+        ma_device_uninit(&device);
         return;
     }
 
-    // Success message
     qDebug() << "Audio device started successfully!";
     audioInitialized = true;
     voiceVolume = 1.0f;
@@ -194,7 +192,6 @@ void MainWindow::onPlayBackgroundClicked()
         QFile backgroundFile(path);
         if (!backgroundFile.open(QIODevice::ReadOnly)) {
 
-            // Error message
             qDebug() << "FILE ERROR: Could not open background file. Reason:" << backgroundFile.errorString();
             ui->backgroundStatusLabel->setText("Status: File Error");
             return;
@@ -237,7 +234,7 @@ void MainWindow::onPlayVoiceClicked()
     if (!audioInitialized) return;
     QMutexLocker locker(&audioStateMutex);
 
-    // --- LOGIC CHANGE 1: Load file if needed ---
+    // --- 1: Load file if needed ---
 
     if (!isVoiceLoaded) {
         QString selected = ui->voiceComboBox->currentText();
@@ -306,7 +303,7 @@ void MainWindow::onPlayVoiceClicked()
     isVoicePlaying = !isVoicePlaying;
 
     if (isVoicePlaying) {
-        // --- LOGIC CHANGE 2: Reset for playback ---
+        // --- 2: Reset for playback ---
         ma_decoder_seek_to_pcm_frame(&voiceDecoder, 0);
 
         // Update UI

@@ -1,0 +1,99 @@
+\chapter{Sonus Flow }
+\hypertarget{md_README}{}\label{md_README}\index{Sonus Flow@{Sonus Flow}}
+\label{md_README_autotoc_md0}%
+\Hypertarget{md_README_autotoc_md0}%
+
+
+{\itshape An Auditory Training Tool for Auditory Processing Disorder (APD)}
+
+\DoxyHorRuler{0}
+
+
+⚠️ {\bfseries{MEDICAL DISCLAIMER \& PROJECT STATUS}}
+
+Sonus Flow is currently in a Pre-\/\+Alpha state. This software is a prototype. It has not been clinically validated, and it is not yet intended for use as a diagnostic or therapeutic tool for Auditory Processing Disorder (APD).
+
+{\bfseries{Use of this software is at your own risk. Always consult with a qualified Audiologist or medical professional before beginning any auditory training regimen or treatment.}}
+
+\DoxyHorRuler{0}
+\hypertarget{md_README_autotoc_md3}{}\doxysection{\texorpdfstring{The Challenge\+: Understanding APD}{The Challenge\+: Understanding APD}}\label{md_README_autotoc_md3}
+Auditory Processing Disorder (APD) is a neurological condition that affects how the brain processes sound. Individuals with APD can hear perfectly well, but their brains struggle to interpret and make sense of what they hear, especially in complex auditory environments. This can make everyday situations, like holding a conversation in a bustling cafe or focusing on a lecture, incredibly challenging.
+
+This difficulty in filtering out background noise to focus on a primary sound source is often related to the "{}cocktail party effect,"{} a cognitive skill that many of us take for granted. For those with APD, the brain doesn\textquotesingle{}t easily separate the "{}signal"{} from the "{}noise."{}
+
+\DoxyHorRuler{0}
+\hypertarget{md_README_autotoc_md5}{}\doxysection{\texorpdfstring{The Solution\+: Sonus Flow}{The Solution\+: Sonus Flow}}\label{md_README_autotoc_md5}
+{\bfseries{Sonus Flow}} is a non-\/commercial, therapeutic tool designed to help individuals with APD practice and improve their auditory discrimination skills in a controlled, safe environment.
+
+By simulating real-\/world scenarios, the application provides targeted exercises that aim to leverage the principles of neuroplasticity—the brain\textquotesingle{}s ability to reorganize itself by forming new neural connections. The goal is to help the user\textquotesingle{}s brain become more efficient at identifying and focusing on a target voice amidst a backdrop of ambient sound, with the hope that this practice translates to improved focus in daily life.
+
+\DoxyHorRuler{0}
+\hypertarget{md_README_autotoc_md7}{}\doxysection{\texorpdfstring{Core Features}{Core Features}}\label{md_README_autotoc_md7}
+
+\begin{DoxyItemize}
+\item {\bfseries{Simulated Real-\/\+World Environments\+:}} Choose from a library of background soundscapes to replicate challenging listening situations.
+\item {\bfseries{Targeted Voice Training\+:}} Isolate and focus on a specific vocal track, training your brain to "{}lock on"{} to a single speaker.
+\item {\bfseries{Independent Playback Control\+:}} Manage the voice and background channels separately to customize the difficulty of your training session.
+\item {\bfseries{Focus-\/\+Targeting EQ\+:}} Utilize a professional-\/grade 3-\/band subtractive equalizer to gently "{}carve out"{} space for the voice, making it more intelligible without artificially boosting volume.
+\item {\bfseries{Extensible by Design\+:}} The application automatically discovers and loads new voice and background files placed in the {\ttfamily sounds} directory, allowing for an ever-\/growing library of training scenarios.
+\end{DoxyItemize}
+
+\DoxyHorRuler{0}
+\hypertarget{md_README_autotoc_md9}{}\doxysection{\texorpdfstring{High-\/\+Performance Audio Architecture}{High-\/\+Performance Audio Architecture}}\label{md_README_autotoc_md9}
+Sonus Flow utilizes a {\bfseries{pull-\/based audio callback system}} via the Mini\+Audio engine. This architecture is a deliberate design choice to ensure professional-\/grade reliability\+:
+
+
+\begin{DoxyItemize}
+\item {\bfseries{Zero-\/\+Jitter Playback\+:}} Instead of the application "{}pushing"{} audio data to the sound card (which can cause stutters if the CPU is busy), the audio hardware "{}pulls"{} data directly from a dedicated high-\/priority buffer thread.
+\item {\bfseries{Thread Safety\+:}} This separates the User Interface (Qt thread) from the Audio Processing (Callback thread). Even if the GUI is being resized or is heavy on resources, the audio "{}flow"{} remains uninterrupted, preventing listener fatigue.
+\item {\bfseries{Buffer Integrity\+:}} By allowing the hardware to dictate the pace, Sonus Flow significantly reduces the risk of underflows or digital clipping, which is vital for a sensitive therapeutic application.
+\end{DoxyItemize}
+
+\DoxyHorRuler{0}
+\hypertarget{md_README_autotoc_md11}{}\doxysection{\texorpdfstring{Safety by Design}{Safety by Design}}\label{md_README_autotoc_md11}
+Hearing health is paramount. Sonus Flow is built from the ground up to be a protective tool, not a harmful one.\hypertarget{md_README_autotoc_md12}{}\doxysubsection{\texorpdfstring{1. Subtractive-\/\+Only EQ}{1. Subtractive-\/\+Only EQ}}\label{md_README_autotoc_md12}
+Unlike traditional equalizers that can boost frequencies to potentially dangerous levels, the EQs in Sonus Flow are {\bfseries{subtractive-\/only}}. The controls can only reduce the volume of specific frequency bands. This is a common technique in professional audio that promotes clarity and prevents excessive loudness, ensuring a safe and comfortable listening experience.\hypertarget{md_README_autotoc_md13}{}\doxysubsection{\texorpdfstring{2. Safe Mode (Planned Feature)}{2. Safe Mode (Planned Feature)}}\label{md_README_autotoc_md13}
+A planned "{}\+Safe Mode"{} will provide an optional master volume limiter. When enabled, it will ensure the total output of the application never exceeds a comfortable, standardized listening level (e.\+g., -\/14 LUFS), providing peace of mind during longer training sessions.
+
+\DoxyHorRuler{0}
+\hypertarget{md_README_autotoc_md15}{}\doxysection{\texorpdfstring{Technical Implementation}{Technical Implementation}}\label{md_README_autotoc_md15}
+
+\begin{DoxyItemize}
+\item {\bfseries{Languages\+:}} C++17
+\item {\bfseries{Framework\+:}} Qt 6 (for the cross-\/platform GUI)
+\item {\bfseries{Build System\+:}} CMake
+\item {\bfseries{Audio Engine\+:}} The core audio playback and processing is powered by the lightweight {\bfseries{Mini\+Audio}} library. The 3-\/band equalizer is a chain of biquad filters ({\itshape low-\/shelf, peaking, high-\/shelf}) designed to provide broad, musical control over the vocal frequency range.
+\end{DoxyItemize}\hypertarget{md_README_autotoc_md16}{}\doxysection{\texorpdfstring{Design Decisions}{Design Decisions}}\label{md_README_autotoc_md16}
+
+\begin{DoxyItemize}
+\item {\bfseries{Why Mini\+Audio?}} Chosen for its "{}header-\/only"{} nature and C-\/based efficiency. This ensures low-\/latency playback which is critical for auditory training where any digital lag could cause listener fatigue.
+\item {\bfseries{Why Subtractive EQ?}} In APD theraphy, the goal is to train the brain to find the "{}signal"{} from the "{}noise"{}. By using a subtractive-\/only model, Sonus Flow ensures that the user is practicing clarity rather than simply turning up the volume, which projects the user\textquotesingle{}s hearing over long-\/term use.
+\item {\bfseries{File Discovery Logic\+:}} Instead of hardcoding a playlist, Sonus Flow features an automatic directory crawler. This empowers clinicians or audiologists to drop their own specific "{}trigger"{} sounds or "{}target"{} voices into the app without recompiling.
+\end{DoxyItemize}
+
+\DoxyHorRuler{0}
+\hypertarget{md_README_autotoc_md18}{}\doxysection{\texorpdfstring{Getting Started (Building from Source)}{Getting Started (Building from Source)}}\label{md_README_autotoc_md18}
+This guide assumes a Linux environment. You will need a C++ compiler, CMake, and the Qt 6 development libraries.\hypertarget{md_README_autotoc_md19}{}\doxysubsection{\texorpdfstring{Prerequisites}{Prerequisites}}\label{md_README_autotoc_md19}
+
+\begin{DoxyItemize}
+\item {\bfseries{On Arch Linux\+:}} 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{sudo\ pacman\ -\/S\ base-\/devel\ cmake\ qt6-\/base}
+
+\end{DoxyCode}
+
+\item {\bfseries{On Ubuntu/\+Debian\+:}} 
+\begin{DoxyCode}{0}
+\DoxyCodeLine{sudo\ apt-\/get\ install\ build-\/essential\ cmake\ qt6-\/base-\/dev}
+
+\end{DoxyCode}
+
+\end{DoxyItemize}\hypertarget{md_README_autotoc_md20}{}\doxysubsection{\texorpdfstring{Build Steps}{Build Steps}}\label{md_README_autotoc_md20}
+
+\begin{DoxyEnumerate}
+\item {\bfseries{Clone the repository\+:}} {\ttfamily sh git clone \mbox{[}\href{https://github.com/KYNNAC/SonusFlow.git}{\texttt{https\+://github.\+com/\+KYNNAC/\+Sonus\+Flow.\+git}}\mbox{]}(\href{https://github.com/KYNNAC/SonusFlow.git}{\texttt{https\+://github.\+com/\+KYNNAC/\+Sonus\+Flow.\+git}}) cd Sonus\+Flow }
+\item {\bfseries{Create a build directory\+:}} {\ttfamily sh mkdir build \&\& cd build }
+\item {\bfseries{Run CMake to configure the project\+:}} {\ttfamily sh cmake .. }
+\item {\bfseries{Compile the project\+:}} {\ttfamily sh make }
+\item {\bfseries{Run the application\+:}} The application requires its {\ttfamily sounds} asset folder to be in the same directory as the executable. The CMake configuration handles this automatically. {\ttfamily sh ./\+Sonus\+Flow } 
+\end{DoxyEnumerate}

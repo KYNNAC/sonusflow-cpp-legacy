@@ -7,11 +7,10 @@
 #include <QString>
 #include <QMutex>
 
-// --- MiniAudio Feature Flags ---
 #define MA_ENABLE_MP3
 #define MA_ENABLE_FLAC
 #define MA_ENABLE_FILTERS
-// --- End of Flags ---
+
 
 #include "miniaudio.h"
 
@@ -77,4 +76,4 @@ private:
     static void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount);
 };
 
-#endif // MAINWINDOW_H
+#endif
