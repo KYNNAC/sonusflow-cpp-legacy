@@ -152,3 +152,10 @@ This guide assumes a Linux environment. You will need a C++ compiler, CMake, and
     ```sh
     ./SonusFlow
     ```
+
+--- 
+
+### 📝 Development Note & Academic Honesty
+Concept and initial GUI scaffolding for **Sonus Flow** began in June 2025. Core engine integration, DSP logic, and thread-safe state management were developed concurrently with my enrollment in **CS50x** (starting July/August 2025). This timeline allowed me to directly apply course concepts—specifically memory safety, multithreading, and modular system architecture—to the project's evolution.
+
+---
