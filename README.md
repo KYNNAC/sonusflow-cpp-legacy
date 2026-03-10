@@ -1,5 +1,6 @@
-# Sonus Flow
+# Sonus Flow (Legacy - C++/Qt)
 **High-Performance Auditory Training Infrastructure for APD**
+**Archived**: This repository represents the initial C++ iteration of SonusFlow. Development has moved to a new architecture (Rust + Slint) focused on real-time performance and system reliability. You can find the new repository here: 
 
 [![Status: Pre-Alpha](https://img.shields.io/badge/Status-Pre--Alpha-orange)](#medical-disclaimer)
 [![C++: 17](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
