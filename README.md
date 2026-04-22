@@ -43,20 +43,20 @@ The following diagram illustrates the signal path and thread boundaries:
 ```mermaid
 graph TD
     A[Audio Assets / Disk] -->|In-Memory Decoding| B(PCM Data / RAM)
-    B --> C{Ping-Pong Buffer}
+    B --> C{Ring Buffer / Atomic State}
     
-    subgraph DSP_Engine [Real-Time Audio Thread]
+    subgraph DSP_Engine [Real-Time Audio Thread - cpal]
     C --> D[Biquad Filter 1: Low-Shelf]
     D --> E[Biquad Filter 2: Mid-Peak]
     E --> F[Biquad Filter 3: High-Shelf]
     end
     
-    subgraph Thread_Safety [State Management]
-    G[Qt UI Thread / User Input] -->|QMutexLocker| H[Safe Parameter Update]
+    subgraph Thread_Safety [Lock-Free Synchronization]
+    G[Slint UI Thread / User Input] -->|Atomic/Channel| H[Non-Blocking Update]
     H --> DSP_Engine
     end
     
-    DSP_Engine --> I[Audio Callback / Hardware Request]
+    DSP_Engine --> I[cpal Callback / Hardware Request]
     I --> J[System Speakers / DAC]
 ```
     
