@@ -20,14 +20,14 @@ jobs:
           python-version: '3.11'
           cache: 'pip' # Speeds up the "bottleneck" of installing libs
 
-      - name: Install Hardware Simulation Tools
+      - name: Install Environment Dependencies
         # This is where you show the "Hardware Centric" side
         run: |
           sudo apt-get update
           sudo apt-get install -y verilator gtkwave
           pip install pytest pydantic requests
 
-      - name: Run ACI Design Validation
+      - name: Execute Static Analysis
         # We use --junitxml to create a machine-readable report
         run: |
           pytest --junitxml=results.xml tests/
