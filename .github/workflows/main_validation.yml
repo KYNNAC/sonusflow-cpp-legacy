@@ -1,0 +1,43 @@
+name: CogniChip ACI Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-silicon:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip' # Speeds up the "bottleneck" of installing libs
+
+      - name: Install Hardware Simulation Tools
+        # This is where you show the "Hardware Centric" side
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y verilator gtkwave
+          pip install pytest pydantic requests
+
+      - name: Run ACI Design Validation
+        # We use --junitxml to create a machine-readable report
+        run: |
+          pytest --junitxml=results.xml tests/
+        env:
+          COGNICHIP_ENV: 'simulation'
+
+      - name: Upload Simulation Evidence (Artifacts)
+        # We ONLY do this if something fails to save storage/time
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-waveforms
+          path: sim_output/*.vcd # These are the files for GTKWave
